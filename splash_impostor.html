@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Spërkat Impostorin! — Loja e Fjalës (Pass-the-Phone)</title>
+<style>
+:root{--bg1:#071022;--bg2:#0e2940;--accent:#00D1FF;--accent2:#FF4FB2;--card:#0b1a2a;--muted:#9fb3c8}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf7ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.wrap{width:100%;max-width:780px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{margin:0;font-size:20px;line-height:1}
+p.lead{margin:4px 0 0 0;color:var(--muted);font-size:13px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,0.45);}
+label{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
+input[type=number], input[type=text], select, button, textarea{width:100%;padding:10px;border-radius:10px;border:0;background:rgba(255,255,255,0.03);color:inherit;font-size:15px}
+.row{display:flex;gap:10px}
+.row .col{flex:1}
+.playersList{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.playerInput{display:flex;gap:8px}
+.playerInput input{flex:1}
+.btn{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#052;font-weight:700;border-radius:10px;padding:10px;border:0}
+.small{font-size:13px;color:var(--muted)}
+.center{display:flex;align-items:center;justify-content:center}
+.bigCard{margin-top:12px;padding:18px;border-radius:16px;background:linear-gradient(180deg,#081827, #052238);text-align:center}
+.wordBox{font-size:28px;font-weight:700;padding:18px 12px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));opacity:0;transform:translateY(20px);transition:opacity 0.5s ease, transform 0.5s ease;}
+.wordBox.show{opacity:1;transform:translateY(0);}
+.hidden{display:none}
+.listNames{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.nameBtn{padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03)}
+#playerNameDisplay{font-size:32px;font-weight:800;color:#FFD700;margin-bottom:12px;opacity:0;transform:translateY(-20px);transition:opacity 0.6s ease, transform 0.6s ease;}
+#playerNameDisplay.show{opacity:1;transform:translateY(0);}
+footer{margin-top:14px;text-align:center;color:var(--muted);font-size:13px}
+@media (min-width:700px){h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div>
+<h1>Spërkat Impostorin!</h1>
+<p class="lead">Lojë fjalësh: gjeni impostorin që nuk e di fjalën.</p>
+</div>
+<div class="small">Shqip • Offline</div>
+</header>
+<div class="card" id="setupCard">
+<label>Përsa lojtarë? (3–20)</label>
+<input id="playerCount" type="number" min="3" max="20" value="4" />
+<div style="height:8px"></div>
+<label>Emrat e lojtarëve (opsional) — vendosni emrat ose përdorni "Lojtar 1" ...</label>
+<div id="playersContainer" class="playersList"></div>
+<div style="height:8px"></div>
+<label>Preferoni fjalët e rrethit:</label>
+<select id="wordMode">
+<option value="preset">Lista e paracaktuar (~70 fjalë)</option>
+<option value="custom">Përdor fjalët e mia (shkruaje në vijim, të ndara me komma)</option>
+<option value="mix">Përzierë (paracaktuar + tuaja)</option>
+</select>
+<div style="height:8px"></div>
+<textarea id="customWords" rows="3" placeholder="Shembull: molle, makine, kafe"></textarea>
+<div style="height:10px"></div>
+<div class="row">
+<div class="col"><button id="createBtn" class="btn">Krijo lojën</button></div>
+<div class="col"><button id="quickFill" class="nameBtn">Plot emra automatike</button></div>
+</div>
+</div>
+<div id="playArea" class="hidden">
+<div class="bigCard card">
+<div id="roundInfo" class="small">Raundi <span id="roundNum">1</span> — Fjalë të mbetura: <span id="remaining">70</span></div>
+<div style="height:12px"></div>
+<div id="playerNameDisplay"></div>
+<div id="wordArea" style="min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column"></div>
+<div style="height:12px"></div>
+<div class="center">
+<button id="showNameBtn" class="nameBtn">Shfaq emrin e lojtarit</button>
+<button id="showWordBtn" class="nameBtn hidden">Shiko fjalën</button>
+<button id="nextPlayerBtn" class="nameBtn hidden">Lojtari tjetër</button>
+</div>
+<div id="voteStage" class="hidden" style="margin-top:10px">
+<div class="small">Voto: Zgjidhni lojtarin që mendoni se është impostor</div>
+<div class="listNames" id="voteButtons"></div>
+<div style="height:10px"></div>
+<div class="center"><button id="revealBtn" class="btn hidden">Zbulo rezultatin</button></div>
+</div>
+<div id="resultStage" class="hidden" style="margin-top:12px">
+<div class="small">Rezultati</div>
+<div style="height:8px"></div>
+<div class="wordBox" id="resultBox"></div>
+<div style="height:10px"></div>
+<div class="row">
+<div class="col"><button id="nextRound" class="btn">Raundi tjetër</button></div>
+<div class="col"><button id="restart" class="nameBtn">Rinise lojën</button></div>
+</div>
+</div>
+</div>
+</div>
+<footer>Mbaje telefonin dhe shtyp butonin çdo herë që ta kalosh — lojë për familje dhe miq.</footer>
+</div>
+<script>
+(function(){
+const presetWords=['mollë','makinë','karrige','tavolinë','derë','dritare','telefon','kompjuter','libër','çantë','orë','lule','ujë','bukë','djathë','çokollatë','kafe','çaj','kripë','peshk','mish','pula','pjatë','lugë','shishe','kopsht','qytet','mal','det','plazh','re','diell','hënë','yll','yje','dhomë','shtëpi','park','qen','mace','zog','kafshë','kopshti','fjetje','këndim','këngë','film','kinema','teatër','futboll','basketboll','lojë','shkollë','shkronjë','kartë','dhuratë','gëzim','festë','këndshëm','ushqim','pecetë','tortë','krem','bukëmishe','mollëpie','lapis','letër','vizë','fustan'];
+let wordsPool=[],players=[],impostorIndex=-1,currentWord='',seenCount=0,round=0;
+const playerCountEl=document.getElementById('playerCount');
+const playersContainer=document.getElementById('playersContainer');
+const createBtn=document.getElementById('createBtn');
+const quickFill=document.getElementById('quickFill');
+const wordMode=document.getElementById('wordMode');
+const customWords=document.getElementById('customWords');
+const playArea=document.getElementById('playArea');
+const setupCard=document.getElementById('setupCard');
+const playerNameDisplay=document.getElementById('playerNameDisplay');
+const wordArea=document.getElementById('wordArea');
+const showNameBtn=document.getElementById('showNameBtn');
+const showWordBtn=document.getElementById('showWordBtn');
+const nextPlayerBtn=document.getElementById('nextPlayerBtn');
+const doneViewing=document.getElementById('doneViewing');
+function createPlayerInputs(){playersContainer.innerHTML='';const n=Math.min(20,Math.max(3,parseInt(playerCountEl.value||4)));for(let i=0;i<n;i++){const div=document.createElement('div');div.className='playerInput';const input=document.createElement('input');input.type='text';input.placeholder='Lojtar '+(i+1);input.dataset.index=i;div.appendChild(input);playersContainer.appendChild(div);}}
+playerCountEl.addEventListener('change',createPlayerInputs);
+quickFill.addEventListener('click',()=>{playerCountEl.value=6;createPlayerInputs();Array.from(playersContainer.querySelectorAll('input')).forEach((inp,i)=>inp.value='Lojtar '+(i+1));});
+createPlayerInputs();
+function buildWords(){const mode=wordMode.value;const custom=customWords.value.split(',').map(s=>s.trim()).filter(s=>s);if(mode==='preset'){wordsPool=Array.from(new Set(presetWords)).slice();}else if(mode==='custom'){wordsPool=Array.from(new Set(custom));}else{wordsPool=Array.from(new Set(presetWords.concat(custom)));}while(wordsPool.length<30){wordsPool=wordsPool.concat(wordsPool.slice(0,10));}for(let i=wordsPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[wordsPool[i],wordsPool[j]]=[wordsPool[j],wordsPool[i]];}if(wordsPool.length>70) wordsPool=wordsPool.slice(0,70);}
+createBtn.addEventListener('click',()=>{const inputs=Array.from(playersContainer.querySelectorAll('input'));players=inputs.map((inp,i)=>inp.value.trim()||('Lojtar '+(i+1)));if(players.length<3||players.length>20){alert('Numri i lojtarëve duhet të jetë midis 3 dhe 20.');return;}buildWords();round=0;startNextRound();setupCard.classList.add('hidden');playArea.classList.remove('hidden');});
+function startNextRound(){if(wordsPool.length===0){alert('Fjalët u mbaruan. Rifillo me fjalë të reja.');return;}round++;currentWord=wordsPool.pop();impostorIndex=Math.floor(Math.random()*players.length);seenCount=0;playerNameDisplay.classList.remove('show');wordArea.innerHTML='';showNameBtn.classList.remove('hidden');showWordBtn.classList.add('hidden');nextPlayerBtn.classList.add('hidden');}
+showNameBtn.addEventListener('click',()=>{const idx=seenCount;playerNameDisplay.textContent='TANI ËSHTË RADHA E '+players[idx].toUpperCase();playerNameDisplay.classList.add('show');showNameBtn.classList.add('hidden');showWordBtn.classList.remove('hidden');});
+showWordBtn.addEventListener('click',()=>{const idx=seenCount;wordArea.innerHTML='';const text=document.createElement('div');text.className='wordBox show';if(idx===impostorIndex){text.textContent='TI JE IMPOSTORI!';text.style.background='linear-gradient(90deg,#4a2a2a,#7b2a5d)';}else{text.textContent=currentWord.toUpperCase();}wordArea.appendChild(text);showWordBtn.classList.add('hidden');nextPlayerBtn.classList.remove('hidden');});
+nextPlayerBtn.addEventListener('click',()=>{seenCount++;if(seenCount>=players.length){doneViewing.classList.remove('hidden');playerNameDisplay.textContent='';wordArea.innerHTML='';nextPlayerBtn.classList.add('hidden');}else{playerNameDisplay.classList.remove('show');wordArea.innerHTML='';showNameBtn.classList.remove('hidden');nextPlayerBtn.classList.add('hidden');}});
+})();
+</script>
+</body>
+</html>
